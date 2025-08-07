@@ -1,0 +1,28 @@
+services:
+  postgres-db:
+    # Use a lightweight version of the official Postgres image
+    image: postgres:16-alpine
+    
+    # Set a specific name for the container
+    container_name: clink-ai
+    
+    # Always restart the container if it stops
+    restart: always
+    
+    # Environment variables to configure the database
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres # Use a strong secret in production
+      - POSTGRES_DB=clink-ai-db
+    
+    # Map port 5432 on your local machine to port 5432 in the container
+    ports:
+      - "5432:5432"
+    
+    # Persist database data on your local machine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# Define the named volume for data persistence
+volumes:
+  postgres_data:
