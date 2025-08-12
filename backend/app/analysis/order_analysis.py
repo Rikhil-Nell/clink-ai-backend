@@ -3,16 +3,12 @@ from itertools import combinations
 from collections import Counter
 from pathlib import Path
 
-from src.config import AnalysisConfig
-from src.utils.data_loader import DataLoader
+from app.utils.preprocessing import preprocess_raw_data
 
 
 class OrderAnalyzer:
     """Analyzes order-level KPIs and patterns"""
-   
-    def __init__(self, config: AnalysisConfig):
-        self.config = config
-   
+
     def compute_invoice_aggregation(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Aggregates invoice-level metrics.
@@ -80,53 +76,11 @@ class OrderAnalyzer:
 
 
 def run_order_analysis(df: pd.DataFrame):
-    """
-    Main orchestrator function for Streamlit compatibility.
-    - Loads data from file path or file-like object (csv/xlsx).
-    - Cleans data.
-    - Returns (invoice_kpis_df, cooccurrence_matrix_df).
-    """
-   
-    # Preprocess data
-    df = DataLoader.preprocess_raw_data(df)
-   
-    # Create analyzer
-    config = AnalysisConfig()
-    analyzer = OrderAnalyzer(config)
-   
-    # Compute outputs
+    
+    df = preprocess_raw_data(df)
+    analyzer = OrderAnalyzer()
+
     invoice_df = analyzer.compute_invoice_aggregation(df)
     cooc_matrix_df = analyzer.compute_cooccurrence_matrix(df)
    
-    # Create output directories if they don't exist
-    script_dir = Path(__file__).parent
-    results_dir = script_dir.parent / "results" / "order_analysis"  # Fixed typo
-    results_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save outputs with correct paths
-    invoice_df.to_csv(results_dir / "Invoice_Aggregation.csv", index=False)
-    cooc_matrix_df.to_csv(results_dir / "Product_Co_occurrence_Top30.csv")  # Match your directory structure
-
     return invoice_df, cooc_matrix_df
-
-
-if __name__ == "__main__":
-    # Get the script directory and construct proper paths
-    script_dir = Path(__file__).parent
-    data_file = script_dir.parent / "test data" / "Year Order Item Data.csv"  # Fixed path
-    
-    # Check if file exists
-    if not data_file.exists():
-        print(f"Error: Data file not found at {data_file}")
-        print("Please check the file path and ensure the data file exists.")
-    else:
-        try:
-            # Pass the file path directly instead of opening in text mode
-            invoice_df, cooc_matrix_df = run_order_analysis(str(data_file))
-            print("Analysis completed successfully!")
-            print(f"Invoice aggregation shape: {invoice_df.shape}")
-            print(f"Co-occurrence matrix shape: {cooc_matrix_df.shape}")
-        except Exception as e:
-            print(f"Error running analysis: {e}")
-            import traceback
-            traceback.print_exc()

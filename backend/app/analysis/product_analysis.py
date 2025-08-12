@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Dict, Any
-from src.config import AnalysisConfig
+from app.core.analysis_config import AnalysisConfig
 
 class ProductAnalyzer:
     """Analyzes product-level KPIs and patterns"""

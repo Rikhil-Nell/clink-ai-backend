@@ -1,8 +1,6 @@
 from typing import Dict, Any, List
 from dataclasses import dataclass
 import pandas as pd
-import json
-from src.config import AnalysisConfig
 
 @dataclass
 class CustomerSegments:
@@ -12,8 +10,6 @@ class CustomerSegments:
     dormant_customers: Dict[str, Any]
 
 class CustomerKPIAnalyzer:
-    def __init__(self, config: AnalysisConfig):
-        self.config = config
 
     def segment_customers(self, df: pd.DataFrame) -> CustomerSegments:
         total_customers = len(df)
@@ -133,8 +129,7 @@ class CustomerKPIAnalyzer:
         }
 
 def run_customer_summarization(customer_df: pd.DataFrame):
-    config = AnalysisConfig()
-    analyzer = CustomerKPIAnalyzer(config=config)
+    analyzer = CustomerKPIAnalyzer()
 
     segments = analyzer.segment_customers(customer_df)
     financials = analyzer.analyze_financials(customer_df)
@@ -143,17 +138,10 @@ def run_customer_summarization(customer_df: pd.DataFrame):
 
     summary = {
         "analysis_timestamp": pd.Timestamp.now().isoformat(),
-        "analysis_config": config.to_dict(),
         "customer_segments": segments.__dict__,
         "financial_summary": financials,
         "coupon_strategy_insights": coupons,
         "additional_insights": additional
     }
-
-    summary_json = json.dumps(summary, indent=2)
-
-    # Save for human review
-    with open("summary_json/customer_kpis_summary.json", "w") as f:
-        f.write(summary_json)
 
     return summary

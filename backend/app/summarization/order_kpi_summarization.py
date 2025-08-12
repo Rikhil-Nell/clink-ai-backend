@@ -1,12 +1,7 @@
 from typing import Dict, List, Any
-
 import pandas as pd
-from src.config import AnalysisConfig
 
 class OrderAnalysisSummarizer:
-
-    def __init__(self, config: AnalysisConfig):
-        self.config = config
 
     def analyze_order_patterns(self, invoice_df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze order patterns and generate KPIs"""
@@ -190,8 +185,8 @@ class OrderAnalysisSummarizer:
         return insights
     
 def run_order_summarization(invoice_df: pd.DataFrame, cooc_matrix: pd.DataFrame):
-    config = AnalysisConfig()
-    summarizer = OrderAnalysisSummarizer(config=config)
+
+    summarizer = OrderAnalysisSummarizer()
 
     # Analyze patterns
     invoice_df_summary = summarizer.analyze_order_patterns(invoice_df=invoice_df)
@@ -208,12 +203,5 @@ def run_order_summarization(invoice_df: pd.DataFrame, cooc_matrix: pd.DataFrame)
         "cooccurrence_analysis": cooc_matrix_summary,
         "business_insights": business_insights
     }
-
-    import json
-
-    summary_json = json.dumps(summary, indent=2)
-
-    with open("summary_json/order_kpis_summary.json", 'w') as f:
-        f.write(summary_json)
 
     return summary

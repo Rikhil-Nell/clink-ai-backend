@@ -6,13 +6,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-from src.config import AnalysisConfig
-from src.utils.data_loader import DataLoader
+from app.utils.preprocessing import preprocess_raw_data
 
 class CustomerAnalyzer:
-    def __init__(self, config: AnalysisConfig):
-        self.config = config
-
+    
     def prepare_customer_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Filters known customers and builds key date fields.
@@ -117,44 +114,14 @@ class CustomerAnalyzer:
 
 
 def run_customer_analysis(df: pd.DataFrame):
-    """
-    Orchestrator function that takes a CSV or Excel file path or file-like object,
-    preprocesses, builds KPIs, runs clustering, saves outputs.
-    """
 
-    # Preprocess raw data (external util)
-    df = DataLoader.preprocess_raw_data(df)
+    df = preprocess_raw_data(df)
 
-    # Create analyzer
-    config = AnalysisConfig()
-    analyzer = CustomerAnalyzer(config)
+    analyzer = CustomerAnalyzer()
 
-    # Build customer data
     df_known = analyzer.prepare_customer_data(df)
     customer_kpis = analyzer.build_customer_kpis(df_known)
     customer_kpis = analyzer.perform_rfm_clustering(customer_kpis)
 
-    # Create output directories
-    script_dir = Path(__file__).parent
-    results_dir = script_dir.parent / "results" / "customer_analysis"
-    results_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save output
-    customer_kpis.to_csv(results_dir / "Customer_KPIs_KnownPhonesOnly.csv", index=False)
-
     return customer_kpis
 
-
-if __name__ == "__main__":
-    script_dir = Path(__file__).parent
-    data_file = script_dir.parent / "test data" / "Year Order Item Data.csv"
-
-    if not data_file.exists():
-        print(f"Data file not found at {data_file}")
-    else:
-        try:
-            customer_summary = run_customer_analysis(str(data_file))
-            print("Customer analysis completed successfully!")
-            print(f"Output shape: {customer_summary.shape}")
-        except Exception as e:
-            print(f"Error: {e}")

@@ -1,30 +1,34 @@
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import AsyncAdaptedQueuePool
+import asyncpg
+from typing import Optional
+import logging
+from app.core.config import settings
 
-from app.core.config import settings # Assuming you have a settings file
+logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
-# These pooling settings are from your first example and are solid
-DB_POOL_SIZE = 83
-WEB_CONCURRENCY = 9
-POOL_SIZE = max(DB_POOL_SIZE // WEB_CONCURRENCY, 5)
+class DatabaseManager:
+    def __init__(self):
+        self.pool: Optional[asyncpg.pool.Pool] = None
+   
+    async def init_pool(self):
+        self.pool = await asyncpg.create_pool(
+            dsn=settings.ASYNC_DATABASE_URI,
+            min_size=5,
+            max_size=20
+        )
+        logger.info("Database connection pool initialized.")
+   
+    async def close_pool(self):
+        if self.pool:
+            await self.pool.close()
+            logger.info("Database connection pool closed.")
+   
+    def get_pool(self) -> asyncpg.pool.Pool:
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized")
+        return self.pool
 
-# Create the async engine
-engine = create_async_engine(
-    str(settings.ASYNC_DATABASE_URI),
-    echo=False,
-    poolclass=AsyncAdaptedQueuePool, # Use a standard pool
-    pool_size=POOL_SIZE,
-    max_overflow=10, # A reasonable overflow
-)
+db_manager = DatabaseManager()
 
-# Create a sessionmaker factory
-# This factory will create new AsyncSession objects when called
-AsyncSessionLocal = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    autoflush=False,
-    autocommit=False,
-    expire_on_commit=False
-)
+async def get_db_pool() -> asyncpg.pool.Pool:
+    return db_manager.get_pool()

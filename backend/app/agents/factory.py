@@ -2,20 +2,16 @@ from typing import Union, Optional
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
-import logfire
-
 # Local Imports
-from src.settings import research_model, chat_model, analysis_model, coupon_model, default_model_settings
-from src.agents.schemas import (
+from app.core.config import research_model, chat_model, analysis_model, coupon_model, default_model_settings
+from app.agents.schemas import (
     AnalysisSummaryResponse,
     OrderStandardCouponResponse,
     CustomerStandardCouponResponse,
     ProductStandardCouponResponse,
     CreativeCouponResponse
 )
-from src.agents.prompts import get_prompt
-
-logfire.instrument_pydantic_ai()
+from app.agents.prompts import get_prompt
 
 # Mapping schemas to categories for standard coupons
 STANDARD_COUPON_SCHEMAS = {
