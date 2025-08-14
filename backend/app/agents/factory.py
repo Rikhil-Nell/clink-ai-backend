@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 from pydantic import BaseModel
 from pydantic_ai import Agent
 

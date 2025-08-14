@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 
-from app.core.config import settings
 from app.db.database import db_manager
-from app.api.v1 import endpoints
+from app.api.v1.api import router
+# from app.agents.registry import initialize_agent_registry
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -34,4 +34,4 @@ app.add_middleware(
 )
 
 # Include the router from the api directory
-app.include_router(endpoints.router, prefix="/api/v1")
+app.include_router(router, prefix="/api/v1")

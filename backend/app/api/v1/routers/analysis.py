@@ -1,12 +1,12 @@
 import asyncpg
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Query
 
-from backend.app.db.database import get_db_pool
-from backend.app.services import analysis_service
-from backend.app.crud.analysis_crud import analysis_crud
-from backend.app.api.deps import get_current_auth_data
-from backend.app.schemas import AuthData, AnalysisTypeEnum 
-
+from app.db.database import get_db_pool
+from app.services import analysis_service
+from app.crud.analysis_crud import analysis_crud
+from app.api.deps import get_current_auth_data
+from app.schemas import AuthData, AnalysisTypeEnum 
+    
 router = APIRouter()
 
 @router.post("/run-all-analyses", status_code=202)

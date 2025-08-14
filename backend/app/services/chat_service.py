@@ -1,45 +1,46 @@
-# in backend/app/services/chat_service.py
-
 import asyncpg
-from typing import Tuple, Any, Dict, Union
-from app.agents.factory import create_agent, Agent
-from app.agents.schemas import OrderStandardCouponResponse, CustomerStandardCouponResponse
-from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, UserPromptPart, TextPart
+import asyncio
+from datetime import datetime
+from app.schemas import ChatMessageResponse
+from app.agents.registry import get_agent
+from app.utils.message_parser import parser
+from app.crud.chat_crud import chat_crud
+from app.crud.analysis_crud import analysis_crud
+from app.schemas import AgentCategory, AgentType, AnalysisTypeEnum
+from pydantic_ai import Agent
+from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 
-def initialize_agents() -> Tuple[Agent, Agent, Agent, Agent, Agent, Agent]:
-    order_analysis_agent = create_agent(agent_type="analysis_summary", category="order")
-    customer_analysis_agent = create_agent(agent_type="analysis_summary", category="customer")
-    order_coupon_agent = create_agent(agent_type="standard_coupon", category="order")
-    customer_coupon_agent = create_agent(agent_type="standard_coupon", category="customer")
-    chat_agent = create_agent(agent_type="chat", category="chat")
-    research_agent = create_agent(agent_type="research", category="research")
-    return order_analysis_agent, customer_analysis_agent, order_coupon_agent, customer_coupon_agent, chat_agent, research_agent
-
-
-
-async def process_user_message(pool: asyncpg.Pool, user_id: int, loyalty_id: int, message: str):
-    """
-    1. Fetches history from the DB using the provided pool.
-    2. Calls the AI agent.
-    3. Saves new messages back to the DB.
-    """
-    # Fetch conversation history
-    history_query = "SELECT role, content FROM chat_messages WHERE loyalty_program_id = $1 ORDER BY created_at ASC;"
-    async with pool.acquire() as conn:
-        history_records = await conn.fetch(history_query, loyalty_id)
-        history = [dict(rec) for rec in history_records]
-
-    # Call your agent logic (placeholder)
-    # agent = get_agent(history)
-    # agent_response = await agent.get_response(message, history)
-    agent_response = f"This is a placeholder response to your message: '{message}'" # Placeholder
-
-    # Save messages to the database
-    insert_query = "INSERT INTO chat_messages (loyalty_program_id, role, content, created_at) VALUES ($1, $2, $3, NOW());"
-    async with pool.acquire() as conn:
-        # Run inserts in a transaction for safety
-        async with conn.transaction():
-            await conn.execute(insert_query, loyalty_id, "user", message)
-            await conn.execute(insert_query, loyalty_id, "bot", agent_response)
+async def chat(pool: asyncpg.Pool, content: str, agent_type: AgentType, category: AgentCategory, loyalty_program_id: int):
     
-    return {"response": agent_response}
+    messages = await chat_crud.fetch_chat_history(pool=pool, loyalty_program_id=loyalty_program_id)
+    message_history: list[ModelMessage] = parser(messages)
+
+    tasks = [
+        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.customer.value),
+        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.order.value),
+        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.product.value)
+    ]
+
+    customer_analysis_result, order_analysis_result, product_analysis_result = await asyncio.gather(*tasks)
+    customer_analysis = customer_analysis_result["analysis_json"] if customer_analysis_result else None
+    order_analysis = order_analysis_result["analysis_json"] if order_analysis_result else None
+    product_analysis = product_analysis_result["analysis_json"] if product_analysis_result else None
+
+    message_history.append(ModelResponse(parts=[TextPart(content=customer_analysis)]))
+    message_history.append(ModelResponse(parts=[TextPart(content=order_analysis)]))
+    message_history.append(ModelResponse(parts=[TextPart(content=product_analysis)]))
+
+    agent: Agent = get_agent(agent_type, category)
+
+    response = await agent.run(user_prompt=content, message_history=message_history)
+
+    chat_crud.insert_chat_message(pool=pool, loyalty_program_id=loyalty_program_id, role="user", content=content)
+    chat_crud.insert_chat_message(pool=pool, loyalty_program_id=loyalty_program_id, role="bot", content=response.output)
+
+    chat_message_response = ChatMessageResponse(
+        role="bot",
+        content=response.output,
+        created_at=datetime.utcnow()
+    )
+    return chat_message_response
+    

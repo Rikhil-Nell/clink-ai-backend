@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     # --- Computed Database URI ---
     # This field will be assembled by the validator below
-    ASYNC_DATABASE_URI: Optional[PostgresDsn] = None
+    ASYNC_DATABASE_URI: str = None
 
     @field_validator("ASYNC_DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], info: FieldValidationInfo) -> Any:
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         
         # Otherwise, build it from the parts
         return str(PostgresDsn.build(
-            scheme="postgresql+asyncpg",
+            scheme="postgresql",
             username=info.data.get("DATABASE_USER"),
             password=info.data.get("DATABASE_PASSWORD"),
             host=info.data.get("DATABASE_HOST"),
@@ -57,7 +57,7 @@ class Settings(BaseSettings):
 
     # --- AI & Service Keys (loaded from .env) ---
     OPENAI_API_KEY: str
-    LOGFIRE_KEY: str
+    # LOGFIRE_KEY: str
     PERPLEXITY_API_KEY: str
 
     # --- AI Model Configuration ---
