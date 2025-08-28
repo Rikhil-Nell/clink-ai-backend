@@ -13,12 +13,12 @@ from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 async def chat(pool: asyncpg.Pool, content: str, agent_type: AgentType, category: AgentCategory, loyalty_program_id: int):
     
     messages = await chat_crud.fetch_chat_history(pool=pool, loyalty_program_id=loyalty_program_id)
-    message_history: list[ModelMessage] = parser(messages)
+    message_history: list[ModelMessage] = await parser(messages)
 
     tasks = [
-        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.customer.value),
-        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.order.value),
-        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.product.value)
+        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.CUSTOMER.value),
+        analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.ORDER.value),
+    #    analysis_crud.get_latest_analysis_result(pool=pool, loyalty_program_id=loyalty_program_id, analysis_type=AnalysisTypeEnum.PRODUCT.value)
     ]
 
     customer_analysis_result, order_analysis_result, product_analysis_result = await asyncio.gather(*tasks)

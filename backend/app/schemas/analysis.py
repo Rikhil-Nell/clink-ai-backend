@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
-class AnalysisTypeEnum(str, Enum):
-    customer = "customer_summary"
-    product = "product_summary"
-    order = "order_summary"
+class AnalysisTypeEnum(IntEnum):
+    CUSTOMER = 1
+    ORDER = 2
+    PRODUCT = 3
