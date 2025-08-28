@@ -12,3 +12,7 @@ wheels/
 
 archive
 data
+
+backend/new.csv
+backend/new.xlsx
+backend/summary.json

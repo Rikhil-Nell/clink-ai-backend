@@ -1,20 +1,20 @@
 import asyncpg
-import pandas as pd
+import json
 from typing import List, Dict, Any, Optional
 
 class CRUDAnalysis:
-    async def get_all_orders_as_df(self, pool: asyncpg.Pool, loyalty_program_id: int) -> pd.DataFrame:
-        """Fetches all orders for a given program and returns them as a Pandas DataFrame."""
-    
+    async def get_all_orders_as_list(self, pool: asyncpg.Pool, loyalty_program_id: int) -> List[Dict[str, Any]]:
+        """Fetches all order JSON blobs for a given program."""
         query = "SELECT * FROM orders WHERE loyalty_program_id = $1;"
         
         async with pool.acquire() as conn:
+
             records = await conn.fetch(query, loyalty_program_id)
             
         if not records:
-            return pd.DataFrame()
-            
-        return pd.DataFrame([dict(r) for r in records])
+            return []
+
+        return [json.loads(r['pos_raw_data']) for r in records if r['pos_raw_data']]
 
     async def save_analysis_result(
         self, 

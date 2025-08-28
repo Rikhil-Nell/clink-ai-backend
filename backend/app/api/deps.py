@@ -15,7 +15,7 @@ async def get_current_auth_data(token: str = Depends(auth_scheme),pool: asyncpg.
     Validates token against Redis cache and returns the associated
     user_id and loyalty_program_id.
     """
-    # Assumes you store a JSON string like: '{"user_id": 123, "loyalty_program_id": 456}'
+    print("token:", token)
     business_user_id = await redis_client.get(f"business_user_token:{token}")
     if not business_user_id:
         raise HTTPException(

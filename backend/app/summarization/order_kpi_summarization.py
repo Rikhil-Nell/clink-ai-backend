@@ -5,13 +5,16 @@ class OrderAnalysisSummarizer:
 
     def analyze_order_patterns(self, invoice_df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze order patterns and generate KPIs"""
+        # --- SENSIBLE DEFAULT: Using the 80th percentile for high-value orders ---
+        high_value_percentile = 0.8
+        
         total_invoices = len(invoice_df)
         total_revenue = invoice_df['net_invoice_value'].sum()
         total_items_sold = invoice_df['total_quantity'].sum()
        
         # Order value distribution
         order_value_stats = invoice_df['net_invoice_value'].describe()
-        high_value_threshold = invoice_df['net_invoice_value'].quantile(self.config.high_value_percentile)
+        high_value_threshold = invoice_df['net_invoice_value'].quantile(high_value_percentile)
         high_value_orders = len(invoice_df[invoice_df['net_invoice_value'] >= high_value_threshold])
        
         # Basket size analysis
@@ -53,9 +56,12 @@ class OrderAnalysisSummarizer:
         """Analyze co-occurrence patterns"""
         strongest_pairs = self._extract_strongest_pairs(cooc_matrix)
        
+        # --- MORE ROBUST: Get the scope directly from the input matrix ---
+        items_in_scope = len(cooc_matrix.index)
+
         return {
-            "analysis_scope": f"Top {self.config.top_n_items} most popular items",
-            "items_in_matrix": len(cooc_matrix.index),
+            "analysis_scope": f"Top {items_in_scope} most popular items",
+            "items_in_matrix": items_in_scope,
             "strongest_cooccurrences": strongest_pairs,
             "matrix_summary": {
                 "total_possible_pairs": len(cooc_matrix.index) * (len(cooc_matrix.index) - 1) // 2,
@@ -65,6 +71,9 @@ class OrderAnalysisSummarizer:
    
     def _analyze_temporal_patterns(self, invoice_df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze temporal patterns in orders"""
+        # --- SENSIBLE DEFAULT: An hour is a "peak" hour if it has >7.5% of total orders ---
+        peak_hours_threshold = 0.075
+
         patterns = {}
        
         # Day of week analysis
@@ -81,14 +90,14 @@ class OrderAnalysisSummarizer:
             hourly_dist = invoice_df['order_hour'].value_counts().sort_index()
             total_orders = len(invoice_df)
             peak_hours = hourly_dist[
-                hourly_dist >= (total_orders * self.config.peak_hours_threshold)
+                hourly_dist >= (total_orders * peak_hours_threshold)
             ].index.tolist()
-           
+            
             patterns["hour_analysis"] = {
                 "peak_hours": peak_hours,
                 "hourly_distribution": hourly_dist.to_dict()
             }
-       
+        
         return patterns
    
     def _extract_strongest_pairs(self, matrix: pd.DataFrame) -> List[Dict[str, Any]]:
@@ -198,7 +207,10 @@ def run_order_summarization(invoice_df: pd.DataFrame, cooc_matrix: pd.DataFrame)
 
     summary = {
         "analysis_timestamp": pd.Timestamp.now().isoformat(),
-        "analysis_config": summarizer.config.to_dict(),
+        "analysis_config": {
+            "high_value_percentile": 0.8,
+            "peak_hours_threshold": 0.075
+        },
         "invoice_analysis": invoice_df_summary,
         "cooccurrence_analysis": cooc_matrix_summary,
         "business_insights": business_insights
