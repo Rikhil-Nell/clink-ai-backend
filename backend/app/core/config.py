@@ -11,20 +11,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.models.openai import OpenAIModel, OpenAIModelName, OpenAIModelSettings
 
-class ModeEnum(str, Enum):
-    development = "development"
-    production = "production"
-    testing = "testing"
+
 
 class Settings(BaseSettings):
-    # --- Application Settings ---
-    MODE: ModeEnum = ModeEnum.development
-    API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str
-
-    # --- JWT Auth ---
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
-    SECRET_KEY: str = secrets.token_urlsafe(32)
 
     # --- Database Parts (loaded from .env) ---
     DATABASE_USER: str
