@@ -1,18 +1,17 @@
+from app.schemas.agent import AgentTypeEnum, AgentCategoryEnum
 from app.agents.factory import create_agent
-from app.schemas.agent import AgentType, AgentCategory
 
-# Explicitly initialize agents for registry
+# Explicitly initialize all agents for registry
 agent_registry = {
-    (AgentType.analysis.value, AgentCategory.order.value): create_agent(agent_type=AgentType.analysis.value, category=AgentCategory.order.value),
-    (AgentType.analysis.value, AgentCategory.customer.value): create_agent(agent_type=AgentType.analysis.value, category=AgentCategory.customer.value),
-    (AgentType.analysis.value, AgentCategory.product.value): create_agent(agent_type=AgentType.analysis.value, category=AgentCategory.product.value),
-    (AgentType.coupon.value, AgentCategory.order.value): create_agent(agent_type=AgentType.coupon.value, category=AgentCategory.order.value),
-    (AgentType.coupon.value, AgentCategory.customer.value): create_agent(agent_type=AgentType.coupon.value, category=AgentCategory.customer.value),
-    (AgentType.coupon.value, AgentCategory.product.value): create_agent(agent_type=AgentType.coupon.value, category=AgentCategory.product.value),
-    (AgentType.chat.value, AgentCategory.chat.value): create_agent(agent_type=AgentType.chat.value, category=AgentCategory.chat.value),
-    (AgentType.research.value, AgentCategory.research.value): create_agent(agent_type=AgentType.research.value, category=AgentCategory.research.value),
+    (AgentTypeEnum.ANALYSIS_SUMMARY.name, AgentCategoryEnum.ORDER.name): create_agent(agent_type=AgentTypeEnum.ANALYSIS_SUMMARY.name.lower(), category=AgentCategoryEnum.ORDER.name.lower()),
+    (AgentTypeEnum.ANALYSIS_SUMMARY.name, AgentCategoryEnum.CUSTOMER.name): create_agent(agent_type=AgentTypeEnum.ANALYSIS_SUMMARY.name.lower(), category=AgentCategoryEnum.CUSTOMER.name.lower()),
+    (AgentTypeEnum.ANALYSIS_SUMMARY.name, AgentCategoryEnum.PRODUCT.name): create_agent(agent_type=AgentTypeEnum.ANALYSIS_SUMMARY.name.lower(), category=AgentCategoryEnum.PRODUCT.name.lower()),
+    (AgentTypeEnum.STANDARD_COUPON.name, AgentCategoryEnum.ORDER.name): create_agent(agent_type=AgentTypeEnum.STANDARD_COUPON.name.lower(), category=AgentCategoryEnum.ORDER.name.lower()),
+    (AgentTypeEnum.STANDARD_COUPON.name, AgentCategoryEnum.CUSTOMER.name): create_agent(agent_type=AgentTypeEnum.STANDARD_COUPON.name.lower(), category=AgentCategoryEnum.CUSTOMER.name.lower()),
+    (AgentTypeEnum.STANDARD_COUPON.name, AgentCategoryEnum.PRODUCT.name): create_agent(agent_type=AgentTypeEnum.STANDARD_COUPON.name.lower(), category=AgentCategoryEnum.PRODUCT.name.lower()),
+    (AgentTypeEnum.CHAT.name, AgentCategoryEnum.CHAT.name): create_agent(agent_type=AgentTypeEnum.CHAT.name.lower(), category=AgentCategoryEnum.CHAT.name.lower()),
+    (AgentTypeEnum.RESEARCH.name, AgentCategoryEnum.RESEARCH.name): create_agent(agent_type=AgentTypeEnum.RESEARCH.name.lower(), category=AgentCategoryEnum.RESEARCH.name.lower()),
 }
 
-def get_agent(agent_type: str, category: str):
-    agent = agent_registry.get((agent_type, category))
-    return agent
+def get_agent(agent_type: str, agent_category: str):
+    return agent_registry.get((agent_type, agent_category))

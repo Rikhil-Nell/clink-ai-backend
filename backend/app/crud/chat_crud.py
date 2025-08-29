@@ -12,7 +12,7 @@ class CRUDChat:
         Fetches the most recent chat messages for a program, up to a specified limit.
         """
         query = """
-            SELECT role, content, bot_response_type created_at 
+            SELECT role, content, agent_type, agent_category, created_at 
             FROM chat_messages 
             WHERE loyalty_program_id = $1 
             ORDER BY created_at DESC 
@@ -27,10 +27,10 @@ class CRUDChat:
 
         return messsages 
     
-    async def insert_chat_message(self, pool: asyncpg.Pool, loyalty_program_id: int, role: str, content: str):
+    async def insert_chat_message(self, pool: asyncpg.Pool, loyalty_program_id: int, role: int, agent_type: int, agent_category: int, content: str):
         """Inserts a single chat message into the database."""
-        query = "INSERT INTO chat_messages (loyalty_program_id, role, content, created_at) VALUES ($1, $2, $3, NOW());"
+        query = "INSERT INTO chat_messages (loyalty_program_id, role, agent_type, agent_category, content, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW());"
         async with pool.acquire() as conn:
-            await conn.execute(query, loyalty_program_id, role, content)
+            await conn.execute(query, loyalty_program_id, role, agent_type, agent_category, content)
 
 chat_crud = CRUDChat()
