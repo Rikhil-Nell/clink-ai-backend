@@ -1,3 +1,3 @@
 from .analysis import AnalysisTypeEnum
 from .token import AuthData
-from .agent import *
+from .agent_schema import *

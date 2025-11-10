@@ -7,8 +7,8 @@ class AgentTypeEnum(IntEnum):
     """The types of agents the frontend can request, mapped to integers."""
     CHAT = 1
     RESEARCH = 2
-    STANDARD_COUPON = 3
-    ANALYSIS_SUMMARY = 4
+    ANALYSIS_SUMMARY = 3
+    WINBACK = 4
 
 class AgentCategoryEnum(IntEnum):
     """Categories of Agents, mapped to integers."""
@@ -17,6 +17,7 @@ class AgentCategoryEnum(IntEnum):
     CUSTOMER = 3
     ORDER = 4
     PRODUCT = 5
+    MISS_YOU = 6
 
 class MessageTypeEnum(IntEnum):
     """Cateogries of messages, mappeed to integers"""

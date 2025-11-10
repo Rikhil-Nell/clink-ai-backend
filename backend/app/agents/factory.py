@@ -6,19 +6,11 @@ from pydantic_ai import Agent
 from app.core.config import research_model, chat_model, analysis_model, coupon_model, default_model_settings
 from app.agents.schemas import (
     AnalysisSummaryResponse,
-    OrderStandardCouponResponse,
-    CustomerStandardCouponResponse,
-    ProductStandardCouponResponse,
-    CreativeCouponResponse
+    Winback
 )
+
 from app.agents.prompts import get_prompt
 
-# Mapping schemas to categories for standard coupons
-STANDARD_COUPON_SCHEMAS = {
-    "order": OrderStandardCouponResponse,
-    "customer": CustomerStandardCouponResponse,
-    "product": ProductStandardCouponResponse,
-}
 
 def create_agent(
     agent_type: str,
@@ -46,8 +38,8 @@ def create_agent(
             instrument=True
         )
         
-    elif agent_type == "standard_coupon":
-        output_schema = STANDARD_COUPON_SCHEMAS.get(category)
+    elif agent_type == "winback":
+        output_schema = Winback[category.upper()].value
         if not output_schema:
             raise ValueError(f"No standard coupon schema defined for category: {category}")
 
@@ -55,18 +47,7 @@ def create_agent(
             model=coupon_model,
             model_settings=default_model_settings,
             instructions=instructions,
-            output_type=output_schema,
-            instrument=True
-        )
-        
-    elif agent_type == "creative_coupon":
-
-        return Agent[CreativeCouponResponse](
-            model=coupon_model,
-            model_settings=default_model_settings,
-            instructions=instructions,
-            output_type=CreativeCouponResponse,
-            instrument=True
+            output_type=output_schema
         )
         
     elif agent_type == "chat":
