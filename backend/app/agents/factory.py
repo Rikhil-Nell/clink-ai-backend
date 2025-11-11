@@ -4,12 +4,10 @@ from pydantic_ai import Agent
 
 # Local Imports
 from app.core.config import research_model, chat_model, analysis_model, coupon_model, default_model_settings
-from app.agents.schemas import (
-    AnalysisSummaryResponse,
-    Winback
-)
+from app.schemas.core.analysis import AnalysisSummaryResponse
 
 from app.agents.prompts import get_prompt
+from app.schemas.templates.registry import get_template_config
 
 
 def create_agent(
@@ -39,7 +37,9 @@ def create_agent(
         )
         
     elif agent_type == "winback":
-        output_schema = Winback[category.upper()].value
+        # Lookup template by category name
+        template_meta = get_template_config(f"WINBACK_{category.upper()}")
+        output_schema = template_meta.model_class
         if not output_schema:
             raise ValueError(f"No standard coupon schema defined for category: {category}")
 

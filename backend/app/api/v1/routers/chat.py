@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.db.database import get_db_pool
 from app.api.deps import get_current_auth_data
 from app.services import chat_service
-from app.schemas import *
+from app.schemas.core import *
 
 router = APIRouter()
 

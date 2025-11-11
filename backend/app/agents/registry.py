@@ -1,4 +1,4 @@
-from app.schemas.agent_schema import AgentTypeEnum, AgentCategoryEnum
+from app.schemas.core.enums import AgentTypeEnum, AgentCategoryEnum
 from app.agents.factory import create_agent
 
 # Explicitly initialize all agents for registry

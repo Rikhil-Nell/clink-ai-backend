@@ -2,7 +2,7 @@ import asyncio
 import asyncpg
 import pandas as pd
 
-from app.schemas.analysis import AnalysisTypeEnum
+from app.schemas.core.enums import AnalysisTypeEnum
 
 from app.crud.analysis_crud import analysis_crud
 from app.utils.preprocessing import preprocess_raw_data

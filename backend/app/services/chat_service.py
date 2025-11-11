@@ -2,7 +2,7 @@ import asyncpg
 import asyncio
 from datetime import datetime
 from typing import List, Dict
-from app.schemas import ChatMessageResponse
+from app.schemas.core import ChatMessageResponse
 from app.agents.registry import get_agent
 from app.utils.message_parser import parser
 from app.crud.chat_crud import chat_crud
