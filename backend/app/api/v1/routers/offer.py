@@ -20,3 +20,15 @@ async def generate_one_template(background_tasks: BackgroundTasks,
         auth_data.loyalty_program_id
     )
     return {"message": f"Offer Generation has commenced with the template_id = {template_id}"}
+
+@router.post("/generate-all-template")
+async def generate_all_template(background_tasks: BackgroundTasks,
+    pool: asyncpg.Pool = Depends(get_db_pool),
+    auth_data: AuthData = Depends(get_current_auth_data)
+):
+    background_tasks.add_task(
+        offer_service.generate_all_templates,
+        pool,
+        auth_data.loyalty_program_id
+    )
+    return {"message": f"Offer Generation has commenced for loyalty_id = {auth_data.loyalty_program_id}"}

@@ -1,13 +1,12 @@
-from typing import Union, Optional, Tuple
+from typing import Union, Optional
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
 # Local Imports
 from app.core.config import research_model, chat_model, analysis_model, coupon_model, default_model_settings
 from app.schemas.core.analysis import AnalysisSummaryResponse
-
 from app.agents.prompts import get_prompt
-from app.schemas.templates.registry import get_template_config
+from app.schemas.templates.registry import get_template_config, TEMPLATE_REGISTRY
 
 
 def create_agent(
@@ -15,19 +14,25 @@ def create_agent(
     category: Optional[str] = None
 ) -> Union[Agent, Agent[BaseModel]]:
     """
-    Factory function to create an agent based on category and type.
+    Factory function to create an agent based on type and category.
+    
+    For offer generation agents, uses TEMPLATE_REGISTRY to get the output schema.
+    For non-offer agents (chat, research, analysis), uses hardcoded schemas.
     
     Args:
-        agent_type: 'research', 'analysis_summary', 'standard_coupon', 'creative_coupon' or "chat".
-        category: 'order', 'customer', or 'product'.
+        agent_type: 'research', 'analysis_summary', 'chat', or template agent types
+                   ('basic_discount', 'winback', 'stamp_card', etc.)
+        category: For analysis: 'order', 'customer', 'product'
+                 For offers: matches template_id components ('coupon', 'miss_you', etc.)
         
     Returns:
         A configured pydantic_ai Agent instance.
     """
-    instructions = get_prompt(agent_type=agent_type, category=category)
+    
+    # === SPECIAL AGENTS (non-template) ===
     
     if agent_type == "analysis_summary":
-
+        instructions = get_prompt(agent_type=agent_type, category=category)
         return Agent[AnalysisSummaryResponse](
             model=analysis_model,
             model_settings=default_model_settings,
@@ -36,22 +41,8 @@ def create_agent(
             instrument=True
         )
         
-    elif agent_type == "winback":
-        # Lookup template by category name
-        template_meta = get_template_config(f"WINBACK_{category.upper()}")
-        output_schema = template_meta.model_class
-        if not output_schema:
-            raise ValueError(f"No standard coupon schema defined for category: {category}")
-
-        return Agent[output_schema](
-            model=coupon_model,
-            model_settings=default_model_settings,
-            instructions=instructions,
-            output_type=output_schema
-        )
-        
     elif agent_type == "chat":
-
+        instructions = get_prompt(agent_type=agent_type, category="chat")
         return Agent(
             model=chat_model,
             model_settings=default_model_settings,
@@ -60,13 +51,48 @@ def create_agent(
         )
     
     elif agent_type == "research":
-
+        instructions = get_prompt(agent_type=agent_type, category="research")
         return Agent(
             model=research_model,
             model_settings=default_model_settings,
             instructions=instructions,
             instrument=True
-        ) 
+        )
+    
+    # === TEMPLATE-DRIVEN OFFER AGENTS ===
     
     else:
-        raise ValueError(f"Unknown agent type: {agent_type}")
+        # Construct template_id from agent_type + category
+        template_id = _construct_template_id(agent_type, category)
+        
+        if template_id not in TEMPLATE_REGISTRY:
+            raise ValueError(f"Unknown agent type/category: {agent_type}/{category}. No matching template found.")
+        
+        template_config = get_template_config(template_id)
+        output_schema = template_config.model_class
+        instructions = get_prompt(agent_type=agent_type, category=category)
+        
+        return Agent[output_schema](
+            model=coupon_model,
+            model_settings=default_model_settings,
+            instructions=instructions,
+            output_type=output_schema,
+            instrument=True
+        )
+
+
+def _construct_template_id(agent_type: str, category: Optional[str]) -> str:
+    """
+    Constructs a template_id from agent_type and category.
+    
+    Examples:
+        ('basic_discount', 'coupon') -> 'BASIC_DISCOUNT_COUPON'
+        ('winback', 'miss_you') -> 'WINBACK_MISS_YOU'
+        ('stamp_card', 'loyalty') -> 'STAMP_CARD_LOYALTY'
+        ('happy_hours', 'time_based') -> 'HAPPY_HOURS_TIME_BASED'
+        ('combo_offer', 'standard') -> 'COMBO_OFFER_STANDARD'
+    """
+    if not category:
+        return agent_type.upper()
+    
+    return f"{agent_type.upper()}_{category.upper()}"

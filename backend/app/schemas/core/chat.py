@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
-from app.schemas.core.enums import AgentTypeEnum, AgentCategoryEnum
+from app.schemas.core.enums import AgentTypeEnum
 
 class ChatMessageBase(BaseModel):
     """The core fields for a chat message."""
@@ -12,7 +12,7 @@ class ChatMessageCreate(BaseModel):
     """The request body for sending a new message."""
     content: str
     agent_type: AgentTypeEnum
-    agent_category: AgentCategoryEnum
+    agent_category: str = "chat"  # Only allow chat/research
 
 class ChatMessageResponse(ChatMessageBase):
     """A single chat message returned to the frontend."""
