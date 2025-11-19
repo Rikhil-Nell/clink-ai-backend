@@ -12,6 +12,6 @@ class HappyHoursFixedOffer(BaseModel):
 
 class HappyHoursTemplate(BaseModel):
     """Container for time-based happy hours offers (offers 13, 14)."""
+    template_name: str = "HAPPY_HOURS"
     percentage_offer: HappyHoursPercentageOffer
     fixed_offer: HappyHoursFixedOffer
-    template_name: str = "HAPPY_HOURS"

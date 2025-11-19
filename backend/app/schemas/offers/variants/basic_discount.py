@@ -12,9 +12,9 @@ class BasicCouponFixedOffer(BaseModel):
 
 class BasicCouponTemplate(BaseModel):
     """Container for hidden basic coupon variants (offers 1, 2)."""
+    template_name: str = "BASIC_DISCOUNT_COUPON"
     percentage_offer: BasicCouponPercentageOffer
     fixed_offer: BasicCouponFixedOffer
-    template_name: str = "BASIC_DISCOUNT_COUPON"
     
 
 class StandardCouponPercentageOffer(BaseModel):
@@ -27,6 +27,6 @@ class StandardCouponFixedOffer(BaseModel):
 
 class StandardCouponTemplate(BaseModel):
     """Container for standard display coupon variants (offers 11, 12)."""
+    template_name: str = "BASIC_DISCOUNT_STANDARD"
     percentage_offer: StandardCouponPercentageOffer
     fixed_offer: StandardCouponFixedOffer
-    template_name: str = "BASIC_DISCOUNT_STANDARD"

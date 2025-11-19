@@ -12,6 +12,6 @@ class MissYouFixedOffer(BaseModel):
 
 class MissYouTemplate(BaseModel):
     """Container for Miss You coupon variants (offers 3, 4)."""
+    template_name: str = "WINBACK_MISSYOU"
     percentage_offer: MissYouPercentageOffer
     fixed_offer: MissYouFixedOffer
-    template_name: str = "WINBACK_MISSYOU"

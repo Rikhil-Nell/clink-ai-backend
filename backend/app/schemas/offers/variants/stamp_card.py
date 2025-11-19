@@ -12,6 +12,6 @@ class StampCardFreebieOffer(BaseModel):
 
 class StampCardTemplate(BaseModel):
     """Container for stamp card/loyalty progression offers (offers 9, 10)."""
+    template_name: str = "STAMP_CARD"
     fixed_offer: StampCardFixedOffer
     freebie_offer: StampCardFreebieOffer
-    template_name: str = "STAMP_CARD"

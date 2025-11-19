@@ -3,8 +3,9 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 
 # Local Imports
-from app.core.config import research_model, chat_model, analysis_model, coupon_model, default_model_settings
+from app.core.config import research_model, chat_model, analysis_model, coupon_model, forecast_model, default_model_settings
 from app.schemas.core.analysis import AnalysisSummaryResponse
+from app.schemas.core.forecast import ForecastResponse
 from app.agents.prompts import get_prompt
 from app.schemas.templates.registry import get_template_config, TEMPLATE_REGISTRY
 
@@ -59,6 +60,16 @@ def create_agent(
             instrument=True
         )
     
+    elif agent_type == "forecast":
+        instructions = get_prompt(agent_type=agent_type, category="forecast")
+        return Agent(
+            model=forecast_model,
+            model_settings=default_model_settings,
+            instructions=instructions,
+            output_type=ForecastResponse,
+            instrument=True
+        )
+
     # === TEMPLATE-DRIVEN OFFER AGENTS ===
     
     else:
@@ -77,6 +88,7 @@ def create_agent(
             model_settings=default_model_settings,
             instructions=instructions,
             output_type=output_schema,
+            retries=3,
             instrument=True
         )
 

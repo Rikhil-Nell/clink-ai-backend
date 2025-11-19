@@ -18,8 +18,8 @@ class WinbackEligibility(BaseModel):
 class TimeBasedEligibility(BaseModel):
     """Happy Hours: Offers valid only during specific times/days."""
     kind: Literal["time_based"] = "time_based"
-    valid_hours_start: time = Field(description="Start time for offer validity (e.g., 15:00)")
-    valid_hours_end: time = Field(description="End time for offer validity (e.g., 18:00)")
+    valid_hours_start: str = Field(description="Start time for offer validity (e.g., 15:00)")
+    valid_hours_end: str = Field(description="End time for offer validity (e.g., 18:00)")
     valid_days: List[int] = Field(description="Days of week when valid (0=Mon, 6=Sun)")
     applies_to: Optional[Literal["food_only", "beverages_only", "all"]] = Field(default="all")
     max_redemptions: Optional[int] = None

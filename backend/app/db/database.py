@@ -14,8 +14,9 @@ class DatabaseManager:
         self.pool = await asyncpg.create_pool(
             dsn=settings.ASYNC_DATABASE_URI,
             min_size=5,
-            max_size=20
-        )
+            max_size=20,
+            max_inactive_connection_lifetime=300,
+          )
         logger.info("Database connection pool initialized.")
    
     async def close_pool(self):

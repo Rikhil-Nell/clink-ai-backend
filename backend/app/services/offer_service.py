@@ -9,6 +9,7 @@ from app.crud.analysis_crud import analysis_crud
 from app.crud.offer_crud import offer_crud
 from app.schemas.core.enums import AnalysisTypeEnum
 from app.schemas.templates.models import TemplateConfig
+from app.services.forecast_service import get_forecast
 
 async def _run_one_template_generation(
     template: TemplateConfig,
@@ -34,13 +35,19 @@ async def _run_one_template_generation(
     result = await agent.run(user_prompt=user_prompt, message_history=message_history)
     generated_offers = result.output
     
+    message_history = message_history.append(ModelResponse(parts=[TextPart(content=generated_offers)]))
+
+    result = await get_forecast(message_history=message_history)
+    forecast = result.output
+
     # Save to DB with goal mappings
     inserted_ids = await offer_crud.save_template_offers(
         pool=pool,
         loyalty_program_id=loyalty_program_id,
         template_id=template.template_id,
         goal_ids=template.goal_ids,  # Pass goal mappings
-        offers_data=generated_offers.model_dump()
+        offers_data=generated_offers.model_dump(),
+        forecast_data=forecast.model_dump()
     )
     
     print(f"✓ Saved {template_name} offers to DB (IDs: {inserted_ids})")

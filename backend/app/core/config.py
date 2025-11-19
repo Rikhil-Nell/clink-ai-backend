@@ -51,9 +51,10 @@ class Settings(BaseSettings):
 
     # --- AI Model Configuration ---
     RESEARCH_MODEL_NAME: str = "sonar"
-    ANALYSIS_MODEL_NAME: str = "gpt-4o"
-    COUPON_MODEL_NAME: str = "gpt-4o"
-    CHAT_MODEL_NAME: str = "gpt-4o-mini"
+    ANALYSIS_MODEL_NAME: OpenAIModelName = "gpt-4o"
+    COUPON_MODEL_NAME: OpenAIModelName = "gpt-4o"
+    CHAT_MODEL_NAME: OpenAIModelName = "gpt-4o-mini"
+    FORECAST_MODEL_NAME: OpenAIModelName = "gpt-4o"
     
     MODEL_TEMPERATURE: float = 0.1
     MODEL_TOP_P: float = 0.95
@@ -82,3 +83,4 @@ research_model = OpenAIModel(model_name=settings.RESEARCH_MODEL_NAME, provider=p
 analysis_model = OpenAIModel(model_name=settings.ANALYSIS_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
 coupon_model = OpenAIModel(model_name=settings.COUPON_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
 chat_model = OpenAIModel(model_name=settings.CHAT_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
+forecast_model = OpenAIModel(model_name=settings.FORECAST_MODEL_NAME, provider=openai_provider, settings=default_model_settings)

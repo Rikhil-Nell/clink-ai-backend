@@ -12,9 +12,9 @@ class FirstVisitFixedOffer(BaseModel):
 
 class FirstVisitTemplate(BaseModel):
     """Container for first-time buyer offers (offers 7, 8)."""
+    template_name: str = "VISIT_MILESTONE_FIRST_VISIT"
     percentage_offer: FirstVisitPercentageOffer
     fixed_offer: FirstVisitFixedOffer
-    template_name: str = "VISIT_MILESTONE_FIRST_VISIT"
     
 
 class VisitBasedPercentageOffer(BaseModel):
@@ -31,7 +31,7 @@ class VisitBasedFreebieOffer(BaseModel):
 
 class VisitBasedTemplate(BaseModel):
     """Container for visit-based reward offers (offers 17, 18, 19)."""
+    template_name: str = "VISIT_MILESTONE_VISIT_BASED"
     percentage_offer: VisitBasedPercentageOffer
     fixed_offer: VisitBasedFixedOffer
     freebie_offer: VisitBasedFreebieOffer
-    template_name: str = "VISIT_MILESTONE_VISIT_BASED"

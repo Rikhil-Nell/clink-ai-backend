@@ -10,7 +10,8 @@ class OfferCRUD:
         loyalty_program_id: int,
         template_id: int,
         goal_ids: List[int],
-        offers_data: Dict[str, Any]
+        offers_data: Dict[str, Any],
+        forecast_data: Dict[str, Any]
     ) -> int:
         """
         Save generated template offers to DB.
@@ -42,7 +43,7 @@ class OfferCRUD:
                     template_id,
                     loyalty_program_id,
                     json.dumps(offers_data),
-                    json.dumps({"Test": "test"})
+                    json.dumps(forecast_data)
                 )
                 inserted_ids.append(offer_id)
         

@@ -12,6 +12,6 @@ class ComboOfferFixedOffer(BaseModel):
 
 class ComboOfferTemplate(BaseModel):
     """Container for combo offer variants (offers 15, 16)."""
+    template_name: str = "COMBO_OFFER"
     percentage_offer: ComboOfferPercentageOffer
     fixed_offer: ComboOfferFixedOffer
-    template_name: str = "COMBO_OFFER"
