@@ -1,6 +1,7 @@
+import pandas as pd
+import numpy as np
 from typing import Dict, Any, List
 from dataclasses import dataclass
-import pandas as pd
 
 @dataclass
 class CustomerSegments:
@@ -10,6 +11,15 @@ class CustomerSegments:
     dormant_customers: Dict[str, Any]
 
 class CustomerKPIAnalyzer:
+    
+    def _safe_mean(self, series: pd.Series, default: float = 0.0) -> float:
+        """Calculate mean, returning default if result is NaN."""
+        result = series.mean()
+        return float(round(result, 2)) if pd.notna(result) else default
+    
+    def _safe_value(self, value: float, default: float = 0.0) -> float:
+        """Return value if valid, else default."""
+        return float(round(value, 2)) if pd.notna(value) and not np.isinf(value) else default
 
     def segment_customers(self, df: pd.DataFrame) -> CustomerSegments:
         total_customers = len(df)
@@ -27,29 +37,30 @@ class CustomerKPIAnalyzer:
             new_customers={
                 "count": len(new_customers_df),
                 "percentage": round(len(new_customers_df) / total_customers * 100, 2) if total_customers else 0,
-                "avg_first_order_value": float(round(new_customers_df['Average_Spend_Per_Order'].mean(), 2)) if len(new_customers_df) > 0 else 0
+                "avg_first_order_value": self._safe_mean(new_customers_df['Average_Spend_Per_Order']) if len(new_customers_df) > 0 else 0
             },
             active_customers={
                 "count": len(active_customers_df),
                 "percentage": round(len(active_customers_df) / total_customers * 100, 2) if total_customers else 0,
-                "avg_clv": float(round(active_customers_df['Total_Spend_By_Customer'].mean(), 2)) if len(active_customers_df) > 0 else 0,
-                "avg_orders": float(round(active_customers_df['Total_Orders_Placed'].mean(), 2)) if len(active_customers_df) > 0 else 0
+                "avg_clv": self._safe_mean(active_customers_df['Total_Spend_By_Customer']) if len(active_customers_df) > 0 else 0,
+                "avg_orders": self._safe_mean(active_customers_df['Total_Orders_Placed']) if len(active_customers_df) > 0 else 0
             },
             dormant_customers={
                 "count": len(dormant_customers_df),
                 "percentage": round(len(dormant_customers_df) / total_customers * 100, 2) if total_customers else 0,
-                "avg_clv_before_dormancy": float(round(dormant_customers_df['Total_Spend_By_Customer'].mean(), 2)) if len(dormant_customers_df) > 0 else 0
+                "avg_clv_before_dormancy": self._safe_mean(dormant_customers_df['Total_Spend_By_Customer']) if len(dormant_customers_df) > 0 else 0
             }
         )
 
     def analyze_financials(self, df: pd.DataFrame) -> Dict[str, Any]:
-        total_revenue = df['Total_Spend_By_Customer'].sum()
+        total_revenue = self._safe_value(df['Total_Spend_By_Customer'].sum())
         total_orders = df['Total_Orders_Placed'].sum()
+        
         return {
-            "total_revenue": float(round(total_revenue, 2)),
-            "estimated_total_profit": float(round(total_revenue * 0.25, 2)),
-            "overall_aov": float(round(total_revenue / total_orders, 2)) if total_orders > 0 else 0,
-            "overall_avg_clv": float(round(df['Total_Spend_By_Customer'].mean(), 2))
+            "total_revenue": total_revenue,
+            "estimated_total_profit": round(total_revenue * 0.25, 2),
+            "overall_aov": self._safe_value(total_revenue / total_orders) if total_orders > 0 else 0,
+            "overall_avg_clv": self._safe_mean(df['Total_Spend_By_Customer'])
         }
 
     def coupon_insights(self, segments: CustomerSegments, df: pd.DataFrame) -> Dict[str, Any]:
@@ -66,7 +77,7 @@ class CustomerKPIAnalyzer:
             stats = active_multi_order['Total_Orders_Placed'].describe()
             stamp_card = {
                 "target_customer_count": len(active_multi_order),
-                "order_frequency_distribution": {k: round(v, 2) for k, v in stats.items()},
+                "order_frequency_distribution": {k: self._safe_value(v) for k, v in stats.items()},
                 "suggestion": f"Most active customers place between {int(stats['25%'])} and {int(stats['75%'])} orders. Recommend 5 or 7 stamp card."
             }
         else:
@@ -81,8 +92,8 @@ class CustomerKPIAnalyzer:
             recency_stats = df['Days_Since_Last_Order'].describe()
             miss_you = {
                 "target_customer_count": len(dormant_df),
-                "avg_spend_of_dormant_customers": float(round(dormant_df['Average_Spend_Per_Order'].mean(), 2)),
-                "last_order_recency_distribution": {k: round(v, 2) for k, v in recency_stats.items()},
+                "avg_spend_of_dormant_customers": self._safe_mean(dormant_df['Average_Spend_Per_Order']),
+                "last_order_recency_distribution": {k: self._safe_value(v) for k, v in recency_stats.items()},
                 "suggestion": "A win-back offer should be compelling relative to these averages."
             }
         else:
@@ -97,7 +108,7 @@ class CustomerKPIAnalyzer:
         if len(new_df) > 0:
             joining = {
                 "target_customer_count": len(new_df),
-                "avg_first_order_value": float(round(new_df['Average_Spend_Per_Order'].mean(), 2)),
+                "avg_first_order_value": self._safe_mean(new_df['Average_Spend_Per_Order']),
                 "suggestion": "Offer joining bonuses cautiously to protect margins."
             }
         else:
@@ -115,11 +126,13 @@ class CustomerKPIAnalyzer:
 
     def additional_insights(self, df: pd.DataFrame) -> Dict[str, Any]:
         top20_threshold = df['Total_Spend_By_Customer'].quantile(0.8)
+        high_value_df = df[df['Total_Spend_By_Customer'] > top20_threshold]
+        
         return {
             "high_value_customers": {
-                "count": len(df[df['Total_Spend_By_Customer'] > top20_threshold]),
-                "threshold": float(round(top20_threshold, 2)),
-                "avg_clv": float(round(df[df['Total_Spend_By_Customer'] > top20_threshold]['Total_Spend_By_Customer'].mean(), 2))
+                "count": len(high_value_df),
+                "threshold": self._safe_value(top20_threshold),
+                "avg_clv": self._safe_mean(high_value_df['Total_Spend_By_Customer'])
             },
             "order_frequency_insights": {
                 "single_order_customers": len(df[df['Total_Orders_Placed'] == 1]),

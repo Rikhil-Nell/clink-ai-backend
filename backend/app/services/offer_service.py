@@ -1,6 +1,6 @@
 import asyncpg
 import asyncio
-from typing import Optional
+from typing import Optional, Dict, Any
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 
 from app.schemas.templates.registry import TEMPLATE_REGISTRY, get_template_config
@@ -9,7 +9,7 @@ from app.crud.analysis_crud import analysis_crud
 from app.crud.offer_crud import offer_crud
 from app.schemas.core.enums import AnalysisTypeEnum
 from app.schemas.templates.models import TemplateConfig
-from app.services.forecast_service import get_forecast
+from app.utils.offer_forecast_splitter import separate_forecast_from_offers
 
 async def _run_one_template_generation(
     template: TemplateConfig,
@@ -20,6 +20,7 @@ async def _run_one_template_generation(
 ):
     """
     Generate offers for ONE template and save to DB.
+    Now generates forecast data inline to reduce API calls.
     """
     template_name = template.model_class.model_fields['template_name'].default
 
@@ -31,23 +32,22 @@ async def _run_one_template_generation(
     if not agent:
         raise LookupError(f"Could not create agent for template: {template_name}")
 
-    # Run agent
+    # Run agent (now generates both offers AND forecast)
     result = await agent.run(user_prompt=user_prompt, message_history=message_history)
     generated_offers = result.output
     
-    message_history = message_history.append(ModelResponse(parts=[TextPart(content=generated_offers)]))
-
-    result = await get_forecast(message_history=message_history)
-    forecast = result.output
-
-    # Save to DB with goal mappings
+    # ✅ Extract forecast data and offers data separately
+    full_data = generated_offers.model_dump()
+    forecast_data, offers_data = separate_forecast_from_offers(full_data)
+    
+    # Save to DB with separated data
     inserted_ids = await offer_crud.save_template_offers(
         pool=pool,
         loyalty_program_id=loyalty_program_id,
         template_id=template.template_id,
-        goal_ids=template.goal_ids,  # Pass goal mappings
-        offers_data=generated_offers.model_dump(),
-        forecast_data=forecast.model_dump()
+        goal_ids=template.goal_ids,
+        offers_data=offers_data,
+        forecast_data=forecast_data
     )
     
     print(f"✓ Saved {template_name} offers to DB (IDs: {inserted_ids})")
@@ -57,7 +57,7 @@ async def _run_one_template_generation(
 async def generate_one_template(
     pool: asyncpg.Pool,
     loyalty_program_id: int,
-    template_id: int,
+    template_key: str,  # ✅ Back to string key for registry lookup
     user_prompt: Optional[str] = None,
     message_history: Optional[list[ModelMessage]] = None
 ):
@@ -69,8 +69,10 @@ async def generate_one_template(
     if message_history is None:
         message_history = []
     
+    template = get_template_config(template_key)
+    
     return await _run_one_template_generation(
-        template_id=template_id,
+        template=template,
         pool=pool,
         loyalty_program_id=loyalty_program_id,
         user_prompt=user_prompt,
@@ -100,7 +102,7 @@ async def generate_all_templates(
     if order_analysis_result:
         message_history.append(ModelResponse(parts=[TextPart(content=order_analysis_result["analysis_json"])]))
     
-    user_prompt = f"Generate offers for loyalty program {loyalty_program_id} based on the analysis data."
+    user_prompt = f"Generate offers for loyalty program {loyalty_program_id} based on the analysis data. Include a forecast for each offer showing target revenue, budget needed, predicted redemptions, and ROI."
     
     # Generate all templates in parallel
     tasks = [
@@ -117,11 +119,11 @@ async def generate_all_templates(
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
     # Log results
-    for template_id, result in zip(TEMPLATE_REGISTRY.keys(), results):
+    for template_key, result in zip(TEMPLATE_REGISTRY.keys(), results):
         if isinstance(result, Exception):
-            print(f"✗ Failed to generate {template_id}: {result}")
+            print(f"✗ Failed to generate {template_key}: {result}")
         else:
-            print(f"✓ Generated {template_id}")
+            print(f"✓ Generated {template_key}")
     
     print("All template generations completed")
     return results

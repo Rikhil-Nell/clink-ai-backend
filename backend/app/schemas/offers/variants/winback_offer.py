@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from app.schemas.offers.discount_details import PercentageDiscountDetails, FixedAmountDiscountDetails
 from app.schemas.offers.eligibility_criteria import WinbackEligibility
+from app.schemas.core.forecast import ForecastResponse
 
 class MissYouPercentageOffer(BaseModel):
     discount: PercentageDiscountDetails
@@ -15,3 +16,4 @@ class MissYouTemplate(BaseModel):
     template_name: str = "WINBACK_MISSYOU"
     percentage_offer: MissYouPercentageOffer
     fixed_offer: MissYouFixedOffer
+    forecast: ForecastResponse

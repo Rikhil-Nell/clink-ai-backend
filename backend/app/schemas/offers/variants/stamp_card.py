@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from app.schemas.offers.discount_details import FixedAmountDiscountDetails, FreebieDiscountDetails
 from app.schemas.offers.eligibility_criteria import StampCardEligibility
+from app.schemas.core.forecast import ForecastResponse
 
 class StampCardFixedOffer(BaseModel):
     discount: FixedAmountDiscountDetails
@@ -15,3 +16,4 @@ class StampCardTemplate(BaseModel):
     template_name: str = "STAMP_CARD"
     fixed_offer: StampCardFixedOffer
     freebie_offer: StampCardFreebieOffer
+    forecast: ForecastResponse

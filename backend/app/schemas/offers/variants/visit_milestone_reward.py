@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from app.schemas.offers.discount_details import PercentageDiscountDetails, FixedAmountDiscountDetails, FreebieDiscountDetails
 from app.schemas.offers.eligibility_criteria import FirstVisitEligibility, VisitMilestoneEligibility
+from app.schemas.core.forecast import ForecastResponse
 
 class FirstVisitPercentageOffer(BaseModel):
     discount: PercentageDiscountDetails
@@ -15,7 +16,7 @@ class FirstVisitTemplate(BaseModel):
     template_name: str = "VISIT_MILESTONE_FIRST_VISIT"
     percentage_offer: FirstVisitPercentageOffer
     fixed_offer: FirstVisitFixedOffer
-    
+    forecast: ForecastResponse
 
 class VisitBasedPercentageOffer(BaseModel):
     discount: PercentageDiscountDetails
@@ -35,3 +36,4 @@ class VisitBasedTemplate(BaseModel):
     percentage_offer: VisitBasedPercentageOffer
     fixed_offer: VisitBasedFixedOffer
     freebie_offer: VisitBasedFreebieOffer
+    forecast: ForecastResponse

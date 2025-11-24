@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     ANALYSIS_MODEL_NAME: OpenAIModelName = "gpt-4o"
     COUPON_MODEL_NAME: OpenAIModelName = "gpt-4o"
     CHAT_MODEL_NAME: OpenAIModelName = "gpt-4o-mini"
-    FORECAST_MODEL_NAME: OpenAIModelName = "gpt-4o"
+    FORECAST_MODEL_NAME: OpenAIModelName = "gpt-4"
     
     MODEL_TEMPERATURE: float = 0.1
     MODEL_TOP_P: float = 0.95

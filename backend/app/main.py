@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.db.database import db_manager
-from app.api.v1.api import router
+from app.api.v2.api import router
 # from app.agents.registry import initialize_agent_registry
 
 logger = logging.getLogger("uvicorn.error")
@@ -34,4 +34,4 @@ app.add_middleware(
 )
 
 # Include the router from the api directory
-app.include_router(router, prefix="/api/v1")
+app.include_router(router, prefix="/api/v2")

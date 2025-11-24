@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from app.schemas.offers.discount_details import PercentageDiscountDetails, FixedAmountDiscountDetails
 from app.schemas.offers.eligibility_criteria import TimeBasedEligibility
+from app.schemas.core.forecast import ForecastResponse
 
 class HappyHoursPercentageOffer(BaseModel):
     discount: PercentageDiscountDetails
@@ -15,3 +16,4 @@ class HappyHoursTemplate(BaseModel):
     template_name: str = "HAPPY_HOURS"
     percentage_offer: HappyHoursPercentageOffer
     fixed_offer: HappyHoursFixedOffer
+    forecast: ForecastResponse

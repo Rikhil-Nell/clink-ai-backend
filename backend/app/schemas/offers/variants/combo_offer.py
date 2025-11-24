@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from app.schemas.offers.discount_details import PercentageDiscountDetails, FixedAmountDiscountDetails
 from app.schemas.offers.eligibility_criteria import StandardEligibility
+from app.schemas.core.forecast import ForecastResponse
 
 class ComboOfferPercentageOffer(BaseModel):
     discount: PercentageDiscountDetails
@@ -15,3 +16,4 @@ class ComboOfferTemplate(BaseModel):
     template_name: str = "COMBO_OFFER"
     percentage_offer: ComboOfferPercentageOffer
     fixed_offer: ComboOfferFixedOffer
+    forecast: ForecastResponse
