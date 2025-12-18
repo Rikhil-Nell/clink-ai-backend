@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # You'll need to install pydantic-ai for these
 from pydantic_ai.providers.openai import OpenAIProvider
-from pydantic_ai.models.openai import OpenAIModel, OpenAIModelName, OpenAIModelSettings
+from pydantic_ai.models.openai import OpenAIChatModel, OpenAIModelName, OpenAIChatModelSettings
 
 
 
@@ -51,10 +51,10 @@ class Settings(BaseSettings):
 
     # --- AI Model Configuration ---
     RESEARCH_MODEL_NAME: str = "sonar"
-    ANALYSIS_MODEL_NAME: OpenAIModelName = "gpt-4o"
-    COUPON_MODEL_NAME: OpenAIModelName = "gpt-4o"
-    CHAT_MODEL_NAME: OpenAIModelName = "gpt-4o-mini"
-    FORECAST_MODEL_NAME: OpenAIModelName = "gpt-4"
+    ANALYSIS_MODEL_NAME: OpenAIModelName = "gpt-5"
+    COUPON_MODEL_NAME: OpenAIModelName = "gpt-5"
+    CHAT_MODEL_NAME: OpenAIModelName = "gpt-5-nano"
+    FORECAST_MODEL_NAME: OpenAIModelName = "gpt-5"
     
     MODEL_TEMPERATURE: float = 0.1
     MODEL_TOP_P: float = 0.95
@@ -69,7 +69,7 @@ settings = Settings()
 # --- Initialize Global AI Objects using the settings ---
 
 # Define shared model settings
-default_model_settings = OpenAIModelSettings(
+default_model_settings = OpenAIChatModelSettings(
     temperature=settings.MODEL_TEMPERATURE,
     top_p=settings.MODEL_TOP_P
 )
@@ -79,8 +79,8 @@ openai_provider = OpenAIProvider(api_key=settings.OPENAI_API_KEY)
 perplexity_provider = OpenAIProvider(base_url='https://api.perplexity.ai', api_key=settings.PERPLEXITY_API_KEY)
 
 # Define Models
-research_model = OpenAIModel(model_name=settings.RESEARCH_MODEL_NAME, provider=perplexity_provider, settings=default_model_settings)
-analysis_model = OpenAIModel(model_name=settings.ANALYSIS_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
-coupon_model = OpenAIModel(model_name=settings.COUPON_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
-chat_model = OpenAIModel(model_name=settings.CHAT_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
-forecast_model = OpenAIModel(model_name=settings.FORECAST_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
+research_model = OpenAIChatModel(model_name=settings.RESEARCH_MODEL_NAME, provider=perplexity_provider, settings=default_model_settings)
+analysis_model = OpenAIChatModel(model_name=settings.ANALYSIS_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
+coupon_model = OpenAIChatModel(model_name=settings.COUPON_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
+chat_model = OpenAIChatModel(model_name=settings.CHAT_MODEL_NAME, provider=openai_provider, settings=default_model_settings)
+forecast_model = OpenAIChatModel(model_name=settings.FORECAST_MODEL_NAME, provider=openai_provider, settings=default_model_settings)

@@ -10,6 +10,7 @@ class OfferCRUD:
         loyalty_program_id: int,
         template_id: int,
         goal_ids: List[int],
+        generation_uuid: str,
         offers_data: Dict[str, Any],
         forecast_data: Dict[str, Any]
     ) -> List[int]:
@@ -26,9 +27,9 @@ class OfferCRUD:
         
         query = """
             INSERT INTO ai_suggestions 
-                (goal_name, template_id, loyalty_program_id, pos_raw_data, ai_forecast_response, created_at, updated_at)
+                (goal_name, template_id, order_id, loyalty_program_id, pos_raw_data, ai_forecast_response, created_at, updated_at)
             VALUES 
-                ($1, $2, $3, $4, $5, NOW(), NOW())
+                ($1, $2, $3, $4, $5, $6, NOW(), NOW())
             RETURNING id
         """
         
@@ -41,6 +42,7 @@ class OfferCRUD:
                     query,
                     goal_name,
                     template_id,
+                    generation_uuid,
                     loyalty_program_id,
                     json.dumps(offers_data),
                     json.dumps(forecast_data)
@@ -117,30 +119,35 @@ class OfferCRUD:
         forecast_data: Dict[str, Any]
     ) -> int:
         """
-        Update ai_forecast_response for ALL offers of a specific template.
-        Useful when you want to update all goals for a template at once.
+        Update ai_forecast_response for the LATEST offer of a specific template.
+        Only updates the most recent row (highest id) for the given template.
         
         Returns:
-            Number of rows updated
+            Number of rows updated (0 or 1)
         """
         query = """
             UPDATE ai_suggestions
             SET 
                 ai_forecast_response = $1,
                 updated_at = NOW()
-            WHERE loyalty_program_id = $2 
-              AND template_id = $3
+            WHERE id = (
+                SELECT id FROM ai_suggestions
+                WHERE loyalty_program_id = $2 
+                  AND template_id = $3
+                ORDER BY id DESC
+                LIMIT 1
+            )
             RETURNING id
         """
         
         async with pool.acquire() as conn:
-            records = await conn.fetch(
+            result = await conn.fetchval(
                 query,
                 json.dumps(forecast_data),
                 loyalty_program_id,
                 template_id
             )
         
-        return len(records)
+        return 1 if result is not None else 0
 
 offer_crud = OfferCRUD()

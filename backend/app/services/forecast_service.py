@@ -12,7 +12,7 @@ async def generate_forecast(
     pool: asyncpg.Pool, 
     loyalty_program_id: int, 
     template_id: int  # ✅ Fixed typo
-) -> Dict[str, Any]:
+) -> None:
     """
     Generate forecast for a specific template's offers.
     
@@ -78,9 +78,9 @@ async def generate_forecast(
     
     print(f"✓ Generated and saved forecast for template {template_id} ({updated_count} records updated)")
     
-    return {
-        "template_id": template_id,
-        "loyalty_program_id": loyalty_program_id,
-        "forecast": forecast_output.model_dump(),
-        "records_updated": updated_count
-    }
+    # return {
+    #     "template_id": template_id,
+    #     "loyalty_program_id": loyalty_program_id,
+    #     "forecast": forecast_output.model_dump(),
+    #     "records_updated": updated_count
+    # }
