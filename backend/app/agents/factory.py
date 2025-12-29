@@ -1,9 +1,9 @@
 from typing import Union, Optional
 from pydantic import BaseModel
-from pydantic_ai import Agent
+from pydantic_ai import Agent, ImageGenerationTool, BinaryImage
 
 # Local Imports
-from app.core.config import research_model, chat_model, analysis_model, coupon_model, forecast_model, default_model_settings
+from app.core.config import research_model, chat_model, analysis_model, coupon_model, forecast_model, stencil_model, image_generation_model, default_model_settings
 from app.schemas.core.analysis import AnalysisSummaryResponse
 from app.schemas.core.forecast import ForecastResponse
 from app.agents.prompts import get_prompt
@@ -69,6 +69,59 @@ def create_agent(
             output_type=ForecastResponse,
             instrument=True
         )
+
+    elif agent_type == "forecast":
+        instructions = get_prompt(agent_type=agent_type, category="forecast")
+        return Agent(
+            model=forecast_model,
+            model_settings=default_model_settings,
+            instructions=instructions,
+            output_type=ForecastResponse,
+            instrument=True
+        )
+    
+    elif agent_type == "stencil":
+        instructions = get_prompt(agent_type=agent_type, category="stencil")
+        return Agent(
+            model=stencil_model,
+            model_settings=default_model_settings,
+            instructions=instructions,
+            builtin_tools=[
+                ImageGenerationTool(
+                    background='transparent',
+                    input_fidelity='high',
+                    moderation='low',
+                    output_compression=100,
+                    output_format='png',
+                    # partial_images=3,
+                    quality='high',
+                    size='1024x1024',
+                )],
+            output_type=BinaryImage,
+            instrument=True
+        )
+    
+    elif agent_type == "image_generation":
+        instructions = get_prompt(agent_type=agent_type, category="image_generation")
+        return Agent(
+            model=image_generation_model,
+            model_settings=default_model_settings,
+            instructions=instructions,
+            builtin_tools=[
+                ImageGenerationTool(
+                    background='transparent',
+                    input_fidelity='high',
+                    moderation='low',
+                    output_compression=100,
+                    output_format='png',
+                    # partial_images=3,
+                    quality='high',
+                    size='1024x1024',
+                )],
+            output_type=BinaryImage,
+            instrument=True
+        )
+    
 
     # === TEMPLATE-DRIVEN OFFER AGENTS ===
     

@@ -10,20 +10,20 @@ from app.schemas.offers.variants import (
     MissYouTemplate,
 )
 from app.schemas.templates.models import TemplateConfig
-from app.schemas.core.enums import GoalEnum, TemplateIdEnum
+from app.schemas.core.enums import GoalEnum, TemplateEnum
 from typing import Optional
 
 TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     # BASIC DISCOUNT TEMPLATES (Goal 1: AOV, Goal 3: Occupancy)
     "BASIC_DISCOUNT_COUPON": TemplateConfig(
-        template_id=TemplateIdEnum.BASIC_DISCOUNT.value,
+        template_id=TemplateEnum.BASIC_DISCOUNT_COUPON.value,
         agent_type="basic_discount",
         agent_category="coupon",
         model_class=BasicCouponTemplate,
         goal_ids=[GoalEnum.INCREASE_AOV.value, GoalEnum.INCREASE_OCCUPANCY.value]
     ),
     "BASIC_DISCOUNT_STANDARD": TemplateConfig(
-        template_id=TemplateIdEnum.BASIC_DISCOUNT.value,
+        template_id=TemplateEnum.BASIC_DISCOUNT_STANDARD.value,
         agent_type="basic_discount",
         agent_category="standard",
         model_class=StandardCouponTemplate,
@@ -32,7 +32,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     
     # WINBACK TEMPLATE (Goal 2: Retention)
     "WINBACK_MISS_YOU": TemplateConfig(
-        template_id=TemplateIdEnum.WINBACK_OFFER.value,
+        template_id=TemplateEnum.WINBACK_MISS_YOU.value,
         agent_type="winback",
         agent_category="miss_you",
         model_class=MissYouTemplate,
@@ -42,7 +42,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     # VISIT MILESTONE TEMPLATES
     # First Visit: Goal 3 (Acquisition)
     "VISIT_MILESTONE_FIRST_VISIT": TemplateConfig(
-        template_id=TemplateIdEnum.VISIT_MILESTONE_REWARD.value,
+        template_id=TemplateEnum.VISIT_MILESTONE_FIRST_VISIT.value,
         agent_type="visit_milestone",
         agent_category="first_visit",
         model_class=FirstVisitTemplate,
@@ -50,7 +50,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     ),
     # Visit-Based: Goal 2 (Retention)
     "VISIT_MILESTONE_VISIT_BASED": TemplateConfig(
-        template_id=TemplateIdEnum.VISIT_MILESTONE_REWARD.value,
+        template_id=TemplateEnum.VISIT_MILESTONE_VISIT_BASED.value,
         agent_type="visit_milestone",
         agent_category="visit_based",
         model_class=VisitBasedTemplate,
@@ -59,7 +59,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     
     # STAMP CARD TEMPLATE (Goal 2: Retention)
     "STAMP_CARD_LOYALTY": TemplateConfig(
-        template_id=TemplateIdEnum.STAMP_CARD.value,
+        template_id=TemplateEnum.STAMP_CARD_LOYALTY.value,
         agent_type="stamp_card",
         agent_category="loyalty",
         model_class=StampCardTemplate,
@@ -68,7 +68,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     
     # HAPPY HOURS TEMPLATE (Goal 3: Occupancy)
     "HAPPY_HOURS_TIME_BASED": TemplateConfig(
-        template_id=TemplateIdEnum.HAPPY_HOURS.value,
+        template_id=TemplateEnum.HAPPY_HOURS_TIME_BASED.value,
         agent_type="happy_hours",
         agent_category="time_based",
         model_class=HappyHoursTemplate,
@@ -77,7 +77,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateConfig] = {
     
     # COMBO OFFER TEMPLATE (Goal 1: AOV)
     "COMBO_OFFER_STANDARD": TemplateConfig(
-        template_id=TemplateIdEnum.COMBO_OFFER.value,
+        template_id=TemplateEnum.COMBO_OFFER_STANDARD.value,
         agent_type="combo_offer",
         agent_category="standard",
         model_class=ComboOfferTemplate,

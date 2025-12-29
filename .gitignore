@@ -9,6 +9,7 @@ wheels/
 # Virtual environments
 .venv
 .env
+.vscode
 
 archive
 data
@@ -16,3 +17,4 @@ data
 backend/new.csv
 backend/new.xlsx
 backend/summary.json
+backend/app/test
