@@ -152,10 +152,10 @@ async def _upload_image(
         order_id=order_id, 
         offer_variant=offer_variant
     )
-    # image_url = upload_file(file_data=image.data, key=key, content_type="image/png")
-    # return image_url, key
-    upload_file(file_data=image.data, key=key, content_type="image/png")
-    return key
+    image_url = upload_file(file_data=image.data, key=key, content_type="image/png")
+    return image_url, key
+    # upload_file(file_data=image.data, key=key, content_type="image/png")
+    # return key
 
 
 async def generate_coupon_image(
@@ -192,8 +192,8 @@ async def generate_coupon_image(
     )
     
     # Step 4: Upload to S3 using auth-provided loyalty_program_id
-    # image_url, s3_key = await _upload_image(
-    s3_key = await _upload_image(    
+    image_url, s3_key = await _upload_image(
+    # s3_key = await _upload_image(    
         loyalty_program_id=loyalty_program_id,  # From auth
         order_id=request.order_id, 
         image=coupon_image, 
@@ -201,7 +201,7 @@ async def generate_coupon_image(
     )
     print("DEBUG: Image Uploaded")
     return CouponImageResponse(
-        # image_url=image_url,
+        image_url=image_url,
         s3_key=s3_key,
         discount_text=request.discount_text,
         validity_text=request.validity_text

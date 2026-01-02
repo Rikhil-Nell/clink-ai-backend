@@ -38,7 +38,7 @@ def upload_file(
             Body=file_data,
             ContentType=content_type
         )
-        # return f"https://{bucket}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
+        return f"https://{bucket}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
     except ClientError as e:
         print(f"S3 upload error: {e}")
         raise

@@ -57,7 +57,7 @@ class CouponImageRequest(BaseModel):
 
 class CouponImageResponse(BaseModel):
     """Result of coupon image generation."""
-    # image_url: str
+    image_url: str
     s3_key: str
     discount_text: str  # Echo back what was rendered
     validity_text: str
