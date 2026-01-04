@@ -1,7 +1,8 @@
-import boto3
-from botocore.exceptions import ClientError
-from typing import Optional
 import uuid
+
+import boto3
+import logfire
+from botocore.exceptions import ClientError
 
 from app.core.config import settings
 
@@ -31,17 +32,20 @@ def upload_file(
     Returns:
         The S3 URL of the uploaded file
     """
-    try:
-        client.put_object(
-            Bucket=bucket,
-            Key=key,
-            Body=file_data,
-            ContentType=content_type
-        )
-        return f"https://{bucket}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
-    except ClientError as e:
-        print(f"S3 upload error: {e}")
-        raise
+    with logfire.span("s3_upload", key=key, content_type=content_type, size_bytes=len(file_data)):
+        try:
+            client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=file_data,
+                ContentType=content_type
+            )
+            url = f"https://{bucket}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
+            logfire.debug("S3 upload success", url=url)
+            return url
+        except ClientError as e:
+            logfire.error("S3 upload failed", key=key, exc_info=e)
+            raise
 
 
 def generate_coupon_key(loyalty_program_id: int, order_id: uuid.UUID, offer_variant: str) -> str:
@@ -61,13 +65,15 @@ def get_presigned_url(key: str, expiration: int = 3600) -> str:
     Returns:
         Presigned URL string
     """
-    try:
-        return client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket, 'Key': key},
-            ExpiresIn=expiration
-        )
-    except ClientError as e:
-        print(f"S3 presigned URL error: {e}")
-        raise
+    with logfire.span("s3_presign", key=key, expiration=expiration):
+        try:
+            url = client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': bucket, 'Key': key},
+                ExpiresIn=expiration
+            )
+            return url
+        except ClientError as e:
+            logfire.error("S3 presigned URL failed", key=key, exc_info=e)
+            raise
 

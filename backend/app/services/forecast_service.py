@@ -1,17 +1,20 @@
-import asyncpg
-from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
-from pydantic_ai.agent import AgentRunResult
 import asyncio
+import asyncpg
+
+import logfire
+from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+
 from app.crud.analysis_crud import analysis_crud
 from app.crud.offer_crud import offer_crud
 from app.schemas.core.enums import AnalysisTypeEnum
 from app.agents.registry import get_agent
-from typing import Dict, Any
 
+
+@logfire.instrument("generate_forecast for template {template_id}")
 async def generate_forecast(
     pool: asyncpg.Pool, 
     loyalty_program_id: int, 
-    template_id: int  # ✅ Fixed typo
+    template_id: int
 ) -> None:
     """
     Generate forecast for a specific template's offers.
@@ -21,7 +24,6 @@ async def generate_forecast(
     2. Build message history from these contexts
     3. Run forecast agent to predict offer performance
     4. Update the offer records with forecast data
-    5. Return the forecast result
     """
     print(f"Starting forecast generation for template {template_id}, loyalty program {loyalty_program_id}")
     
@@ -43,6 +45,13 @@ async def generate_forecast(
         )
     )
     
+    logfire.debug(
+        "Context fetched",
+        has_customer_analysis=customer_analysis_result is not None,
+        has_order_analysis=order_analysis_result is not None,
+        has_offer=offer_result is not None
+    )
+    
     message_history: list[ModelMessage] = []
     
     if customer_analysis_result:
@@ -60,9 +69,10 @@ async def generate_forecast(
             ModelResponse(parts=[TextPart(content=offer_result["pos_raw_data"])])
         )
     else:
+        logfire.error("No offer found", template_id=template_id, loyalty_program_id=loyalty_program_id)
         raise ValueError(f"No offer found for template {template_id}. Generate offers first.")
     
-    user_prompt = f"Analyze the potential impact and forecast outcomes for these offers based on the customer and order analysis data."
+    user_prompt = "Analyze the potential impact and forecast outcomes for these offers based on the customer and order analysis data."
     
     agent = get_agent(agent_type="forecast", agent_category="forecast")
     result = await agent.run(user_prompt=user_prompt, message_history=message_history)
@@ -76,11 +86,8 @@ async def generate_forecast(
         forecast_data=forecast_output.model_dump()
     )
     
-    print(f"✓ Generated and saved forecast for template {template_id} ({updated_count} records updated)")
-    
-    # return {
-    #     "template_id": template_id,
-    #     "loyalty_program_id": loyalty_program_id,
-    #     "forecast": forecast_output.model_dump(),
-    #     "records_updated": updated_count
-    # }
+    logfire.info(
+        "Forecast saved",
+        template_id=template_id,
+        records_updated=updated_count
+    )

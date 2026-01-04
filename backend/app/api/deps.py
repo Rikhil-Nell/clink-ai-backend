@@ -1,16 +1,22 @@
-import redis.asyncio as redis
 import asyncpg
-from fastapi import Depends, HTTPException, status
+from redis.asyncio import Redis
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import APIKeyHeader
-from app.core.config import settings
 from app.schemas.core.auth import AuthData
 from app.db.database import get_db_pool
 from app.crud.business_user_crud import get_loyalty_program_id_by_business_user_id
 
 auth_scheme = APIKeyHeader(name="Authorization")
-redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
 
-async def get_current_auth_data(token: str = Depends(auth_scheme),pool: asyncpg.Pool = Depends(get_db_pool)) -> AuthData:
+def get_redis(request: Request) -> Redis:
+    """Get Redis client from app state."""
+    return request.app.state.redis
+
+async def get_current_auth_data(
+    token: str = Depends(auth_scheme),
+    pool: asyncpg.Pool = Depends(get_db_pool),
+    redis_client: Redis = Depends(get_redis)
+) -> AuthData:
     """
     Validates token against Redis cache and returns the associated
     user_id and loyalty_program_id.

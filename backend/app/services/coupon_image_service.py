@@ -5,17 +5,14 @@ from app.schemas.core.image_gen import CouponImageRequest, CouponImageResponse
 
 import asyncpg
 from uuid import UUID
+
+import logfire
 from pydantic_ai import ImageUrl, BinaryImage
 
 
 def _build_stencil_prompt(request: CouponImageRequest) -> str:
-    """
-    Build the stencil/layout prompt.
-    This creates a structural blueprint for the coupon.
-    """
+    """Build the stencil/layout prompt."""
     colors_hint = ", ".join(request.brand_colors) if request.brand_colors else "brand-appropriate warm colors"
-    
-    # Determine primary product based on brand or let AI decide
     product_suggestions = "milkshake cup, coffee cup, dessert plate, food packaging, or branded container"
     
     return f"""Design a coupon layout for: {request.brand_name}
@@ -44,12 +41,9 @@ Create a structural layout showing this composition."""
 
 
 def _build_coupon_prompt(request: CouponImageRequest) -> str:
-    """
-    Build the full coupon render prompt.
-    """
+    """Build the full coupon render prompt."""
     colors_str = ", ".join(request.brand_colors) if request.brand_colors else "rich, appetizing colors matching the brand"
     
-    # Eligibility-specific visual hints
     eligibility = request.selected_offer.variant_data.eligibility
     visual_hint = ""
     if eligibility.kind == "visit_milestone":
@@ -93,30 +87,18 @@ TEXT STYLING:
 QUALITY: High-end marketing material suitable for social media and print."""
 
 
+@logfire.instrument("generate_stencil")
 async def _generate_stencil(user_prompt: str, logo_link: str) -> BinaryImage:
     """Generate the layout/stencil using the stencil agent."""
-    try:
-        print(f"DEBUG: Getting stencil agent...")
-        agent = get_agent(agent_type="stencil", agent_category="stencil")
-        print(f"DEBUG: Agent retrieved: {agent}")
-        print(f"DEBUG: Logo link: {logo_link[:100]}...")
-        print(f"DEBUG: Prompt length: {len(user_prompt)}")
-        
-        print(f"DEBUG: Running agent...")
-        result = await agent.run(user_prompt=[
-            user_prompt, 
-            ImageUrl(url=logo_link),
-        ])
-        print(f"DEBUG: Agent run complete, result type: {type(result)}")
-        print(f"DEBUG: Output type: {type(result.output)}")
-        return result.output
-    except Exception as e:
-        print(f"DEBUG ERROR in _generate_stencil: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
-        raise
+    agent = get_agent(agent_type="stencil", agent_category="stencil")
+    result = await agent.run(user_prompt=[
+        user_prompt, 
+        ImageUrl(url=logo_link),
+    ])
+    return result.output
 
 
+@logfire.instrument("generate_coupon_image_from_stencil")
 async def _generate_coupon_image(
     user_prompt: str, 
     logo_link: str, 
@@ -132,7 +114,8 @@ async def _generate_coupon_image(
     return result.output
 
 
-async def _fetch_logo(pool: asyncpg.Pool, loyalty_program_id: int) -> str:
+@logfire.instrument("fetch_logo for {loyalty_program_id}")
+async def _fetch_logo(pool: asyncpg.Pool, loyalty_program_id: int) -> str | None:
     """Fetch logo presigned URL from S3 using ActiveStorage mapping."""
     logo_info = await logo_crud.get_logo_key_for_loyalty_program(pool, loyalty_program_id)
     if logo_info:
@@ -147,21 +130,26 @@ async def _upload_image(
     offer_variant: str
 ) -> tuple[str, str]:
     """Upload image to S3 and return (url, key)."""
-    key = generate_coupon_key(
-        loyalty_program_id=loyalty_program_id, 
-        order_id=order_id, 
+    with logfire.span(
+        "upload_coupon_image",
+        loyalty_program_id=loyalty_program_id,
+        order_id=str(order_id),
         offer_variant=offer_variant
-    )
-    image_url = upload_file(file_data=image.data, key=key, content_type="image/png")
-    return image_url, key
-    # upload_file(file_data=image.data, key=key, content_type="image/png")
-    # return key
+    ):
+        key = generate_coupon_key(
+            loyalty_program_id=loyalty_program_id, 
+            order_id=order_id, 
+            offer_variant=offer_variant
+        )
+        image_url = upload_file(file_data=image.data, key=key, content_type="image/png")
+        logfire.info("Image uploaded", s3_key=key)
+        return image_url, key
 
 
 async def generate_coupon_image(
     pool: asyncpg.Pool,
     request: CouponImageRequest,
-    loyalty_program_id: int,  # Now passed separately from auth
+    loyalty_program_id: int,
 ) -> CouponImageResponse:
     """
     Main entry point for coupon image generation.
@@ -173,36 +161,50 @@ async def generate_coupon_image(
     4. Upload to S3
     5. Return response
     """
-    # Step 1: Fetch logo
-    logo_link = await _fetch_logo(pool=pool, loyalty_program_id=loyalty_program_id)
-    if not logo_link:
-        raise ValueError(f"No logo found for loyalty_program_id: {loyalty_program_id}")
-    
-    # Step 2: Generate stencil
-    stencil_prompt = _build_stencil_prompt(request)
-    stencil_image = await _generate_stencil(user_prompt=stencil_prompt, logo_link=logo_link)
-    
-    print("DEBUG: Stencil Generated")
-    # Step 3: Generate full coupon image
-    coupon_prompt = _build_coupon_prompt(request)
-    coupon_image = await _generate_coupon_image(
-        user_prompt=coupon_prompt, 
-        logo_link=logo_link, 
-        stencil_image=stencil_image
-    )
-    
-    # Step 4: Upload to S3 using auth-provided loyalty_program_id
-    image_url, s3_key = await _upload_image(
-    # s3_key = await _upload_image(    
-        loyalty_program_id=loyalty_program_id,  # From auth
-        order_id=request.order_id, 
-        image=coupon_image, 
+    with logfire.span(
+        "generate_coupon_image",
+        loyalty_program_id=loyalty_program_id,
+        order_id=str(request.order_id),
+        brand_name=request.brand_name,
         offer_variant=request.offer_variant
-    )
-    print("DEBUG: Image Uploaded")
-    return CouponImageResponse(
-        image_url=image_url,
-        s3_key=s3_key,
-        discount_text=request.discount_text,
-        validity_text=request.validity_text
-    )
+    ):
+        # Step 1: Fetch logo
+        logo_link = await _fetch_logo(pool=pool, loyalty_program_id=loyalty_program_id)
+        if not logo_link:
+            logfire.error("No logo found", loyalty_program_id=loyalty_program_id)
+            raise ValueError(f"No logo found for loyalty_program_id: {loyalty_program_id}")
+        
+        # Step 2: Generate stencil
+        stencil_prompt = _build_stencil_prompt(request)
+        stencil_image = await _generate_stencil(user_prompt=stencil_prompt, logo_link=logo_link)
+        logfire.debug("Stencil generated")
+        
+        # Step 3: Generate full coupon image
+        coupon_prompt = _build_coupon_prompt(request)
+        coupon_image = await _generate_coupon_image(
+            user_prompt=coupon_prompt, 
+            logo_link=logo_link, 
+            stencil_image=stencil_image
+        )
+        logfire.debug("Coupon image generated")
+        
+        # Step 4: Upload to S3
+        image_url, s3_key = await _upload_image(
+            loyalty_program_id=loyalty_program_id,
+            order_id=request.order_id, 
+            image=coupon_image, 
+            offer_variant=request.offer_variant
+        )
+        
+        logfire.info(
+            "Coupon generation complete",
+            s3_key=s3_key,
+            discount_text=request.discount_text
+        )
+        
+        return CouponImageResponse(
+            image_url=image_url,
+            s3_key=s3_key,
+            discount_text=request.discount_text,
+            validity_text=request.validity_text
+        )

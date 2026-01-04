@@ -1,30 +1,41 @@
+from contextlib import asynccontextmanager
+
+import logfire
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
+import redis.asyncio as redis
 
 from app.db.database import db_manager
 from app.api.v2.api import router
-# from app.agents.registry import initialize_agent_registry
+from app.core.config import settings
 
-logger = logging.getLogger("uvicorn.error")
+logfire.configure(token=settings.LOGFIRE_TOKEN,
+                  environment=settings.LOGFIRE_ENVIRONMENT,
+                  console=None
+                )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         await db_manager.init_pool()
-        logger.info("App started with database connection.")
+        app.state.redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        logfire.info("App started with database and Redis connections.")
     except Exception as e:
-        logger.error(f"Failed to initialize database pool: {e}")
+        logfire.error("Failed to initialize connections", exc_info=e)
         raise
     yield
     try:
+        await app.state.redis.aclose()
         await db_manager.close_pool()
-        logger.info("App shutdown.")
+        logfire.info("App shutdown.")
     except Exception as e:
-        logger.error(f"Error during shutdown: {e}")
+        logfire.error(f"Error during shutdown", exc_info=e)
 
 app = FastAPI(lifespan=lifespan, title="My Chat Service")
+logfire.instrument_fastapi(app=app)
+logfire.instrument_asyncpg()
+logfire.instrument_pydantic_ai()
+logfire.instrument_redis()
 
 app.add_middleware(
     CORSMiddleware,

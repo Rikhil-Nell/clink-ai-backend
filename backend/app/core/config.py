@@ -52,10 +52,12 @@ class Settings(BaseSettings):
 
     # --- AI & Service Keys (loaded from .env) ---
     OPENAI_API_KEY: str = Field(..., validation_alias="OPENAI_API_KEY")
-    # LOGFIRE_KEY: str
     PERPLEXITY_API_KEY: str = Field(..., validation_alias="PERPLEXITY_API_KEY")
     GOOGLE_API_KEY: str = Field(..., validation_alias="GOOGLE_API_KEY")
 
+    LOGFIRE_TOKEN: str = Field(..., validation_alias="LOGFIRE_TOKEN")
+    LOGFIRE_ENVIRONMENT: str = Field(..., validation_alias="LOGFIRE_ENVIRONMENT")
+    
     # --- AI Model Configuration ---
     RESEARCH_MODEL_NAME: str = "sonar"
     ANALYSIS_MODEL_NAME: OpenAIModelName = "gpt-5"
